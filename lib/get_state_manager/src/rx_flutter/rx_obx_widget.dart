@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'package:flutter/widgets.dart';
-import '../../../get_rx/get_rx.dart';
+import '../../../get_rx/src/rx_types/rx_types.dart';
 
 typedef WidgetCallback = Widget Function();
 
@@ -12,6 +12,7 @@ typedef WidgetCallback = Widget Function();
 abstract class ObxWidget extends StatefulWidget {
   const ObxWidget({Key key}) : super(key: key);
 
+  @override
   _ObxState createState() => _ObxState();
 
   @protected
@@ -23,12 +24,12 @@ class _ObxState extends State<ObxWidget> {
   StreamSubscription subs;
 
   _ObxState() {
-    _observer = Rx();
+    _observer = RxNotifier();
   }
 
   @override
   void initState() {
-    subs = _observer.subject.stream.listen((data) => setState(() {}));
+    subs = _observer.listen((data) => setState(() {}));
     super.initState();
   }
 
@@ -40,8 +41,8 @@ class _ObxState extends State<ObxWidget> {
   }
 
   Widget get notifyChilds {
-    final observer = getObs;
-    getObs = _observer;
+    final observer = RxInterface.proxy;
+    RxInterface.proxy = _observer;
     final result = widget.build();
     if (!_observer.canUpdate) {
       throw """
@@ -53,7 +54,7 @@ class _ObxState extends State<ObxWidget> {
       If you need to update a parent widget and a child widget, wrap each one in an Obx/GetX.
       """;
     }
-    getObs = observer;
+    RxInterface.proxy = observer;
     return result;
   }
 
@@ -88,9 +89,6 @@ class Obx extends ObxWidget {
 ///    ),
 ///    false.obs,
 ///   ),
-
-// TODO: change T to a proper Rx interface, that includes the accessor
-//  for ::value
 class ObxValue<T extends RxInterface> extends ObxWidget {
   final Widget Function(T) builder;
   final T data;
@@ -99,4 +97,25 @@ class ObxValue<T extends RxInterface> extends ObxWidget {
 
   @override
   Widget build() => builder(data);
+}
+
+/// Similar to Obx, but manages a local state.
+/// Pass the initial data in constructor.
+/// Useful for simple local states, like toggles, visibility, themes,
+/// button states, etc.
+///  Sample:
+///    ObxValue((data) => Switch(
+///      value: data.value,
+///      onChanged: (flag) => data.value = flag,
+///    ),
+///    false.obs,
+///   ),
+class RxValue<T> extends ObxWidget {
+  final Widget Function(T data) builder;
+  final Rx<T> data = Rx<T>();
+
+  RxValue(this.builder, {Key key}) : super(key: key);
+
+  @override
+  Widget build() => builder(data.value);
 }

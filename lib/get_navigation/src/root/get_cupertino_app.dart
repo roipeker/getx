@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import '../../../get_core/get_core.dart';
@@ -7,9 +8,10 @@ import '../../../get_utils/get_utils.dart';
 import '../../get_navigation.dart';
 import 'root_controller.dart';
 
-class GetMaterialApp extends StatelessWidget {
-  const GetMaterialApp({
+class GetCupertinoApp extends StatelessWidget {
+  const GetCupertinoApp({
     Key key,
+    this.theme,
     this.navigatorKey,
     this.home,
     this.routes = const <String, WidgetBuilder>{},
@@ -28,16 +30,12 @@ class GetMaterialApp extends StatelessWidget {
     this.customTransition,
     this.onInit,
     this.onDispose,
-    this.theme,
-    this.darkTheme,
-    this.themeMode = ThemeMode.system,
     this.locale,
     this.fallbackLocale,
     this.localizationsDelegates,
     this.localeListResolutionCallback,
     this.localeResolutionCallback,
     this.supportedLocales = const <Locale>[Locale('en', 'US')],
-    this.debugShowMaterialGrid = false,
     this.showPerformanceOverlay = false,
     this.checkerboardRasterCacheImages = false,
     this.checkerboardOffscreenLayers = false,
@@ -49,7 +47,7 @@ class GetMaterialApp extends StatelessWidget {
     this.unknownRoute,
     this.routingCallback,
     this.defaultTransition,
-    // this.actions,
+    this.onReady,
     this.getPages,
     this.opaqueRoute,
     this.enableLog,
@@ -57,15 +55,21 @@ class GetMaterialApp extends StatelessWidget {
     this.popGesture,
     this.transitionDuration,
     this.defaultGlobalState,
+    this.highContrastTheme,
+    this.highContrastDarkTheme,
+    this.actions,
   })  : assert(routes != null),
         assert(navigatorObservers != null),
         assert(title != null),
-        assert(debugShowMaterialGrid != null),
         assert(showPerformanceOverlay != null),
         assert(checkerboardRasterCacheImages != null),
         assert(checkerboardOffscreenLayers != null),
         assert(showSemanticsDebugger != null),
         assert(debugShowCheckedModeBanner != null),
+        routeInformationProvider = null,
+        routeInformationParser = null,
+        routerDelegate = null,
+        backButtonDispatcher = null,
         super(key: key);
 
   final GlobalKey<NavigatorState> navigatorKey;
@@ -79,9 +83,6 @@ class GetMaterialApp extends StatelessWidget {
   final TransitionBuilder builder;
   final String title;
   final GenerateAppTitle onGenerateTitle;
-  final ThemeData theme;
-  final ThemeData darkTheme;
-  final ThemeMode themeMode;
   final CustomTransition customTransition;
   final Color color;
   final Map<String, Map<String, String>> translationsKeys;
@@ -99,13 +100,14 @@ class GetMaterialApp extends StatelessWidget {
   final bool showSemanticsDebugger;
   final bool debugShowCheckedModeBanner;
   final Map<LogicalKeySet, Intent> shortcuts;
-
-  // final Map<LocalKey, ActionFactory> actions;
-  final bool debugShowMaterialGrid;
+  final ThemeData highContrastTheme;
+  final ThemeData highContrastDarkTheme;
+  final Map<Type, Action<Intent>> actions;
   final Function(Routing) routingCallback;
   final Transition defaultTransition;
   final bool opaqueRoute;
   final VoidCallback onInit;
+  final VoidCallback onReady;
   final VoidCallback onDispose;
   final bool enableLog;
   final LogWriterCallback logWriterCallback;
@@ -116,46 +118,77 @@ class GetMaterialApp extends StatelessWidget {
   final bool defaultGlobalState;
   final List<GetPage> getPages;
   final GetPage unknownRoute;
+  final RouteInformationProvider routeInformationProvider;
+  final RouteInformationParser<Object> routeInformationParser;
+  final RouterDelegate<Object> routerDelegate;
+  final BackButtonDispatcher backButtonDispatcher;
+  final CupertinoThemeData theme;
+
+  const GetCupertinoApp.router({
+    Key key,
+    this.theme,
+    this.routeInformationProvider,
+    @required this.routeInformationParser,
+    @required this.routerDelegate,
+    this.backButtonDispatcher,
+    this.builder,
+    this.title = '',
+    this.onGenerateTitle,
+    this.color,
+    this.highContrastTheme,
+    this.highContrastDarkTheme,
+    this.locale,
+    this.localizationsDelegates,
+    this.localeListResolutionCallback,
+    this.localeResolutionCallback,
+    this.supportedLocales = const <Locale>[Locale('en', 'US')],
+    this.showPerformanceOverlay = false,
+    this.checkerboardRasterCacheImages = false,
+    this.checkerboardOffscreenLayers = false,
+    this.showSemanticsDebugger = false,
+    this.debugShowCheckedModeBanner = true,
+    this.shortcuts,
+    this.actions,
+    this.customTransition,
+    this.translationsKeys,
+    this.translations,
+    this.textDirection,
+    this.fallbackLocale,
+    this.routingCallback,
+    this.defaultTransition,
+    this.opaqueRoute,
+    this.onInit,
+    this.onReady,
+    this.onDispose,
+    this.enableLog,
+    this.logWriterCallback,
+    this.popGesture,
+    this.smartManagement = SmartManagement.full,
+    this.initialBinding,
+    this.transitionDuration,
+    this.defaultGlobalState,
+    this.getPages,
+    this.unknownRoute,
+  })  : assert(routeInformationParser != null),
+        assert(routerDelegate != null),
+        assert(title != null),
+        assert(showPerformanceOverlay != null),
+        assert(checkerboardRasterCacheImages != null),
+        assert(checkerboardOffscreenLayers != null),
+        assert(showSemanticsDebugger != null),
+        assert(debugShowCheckedModeBanner != null),
+        navigatorObservers = null,
+        navigatorKey = null,
+        onGenerateRoute = null,
+        home = null,
+        onGenerateInitialRoutes = null,
+        onUnknownRoute = null,
+        routes = null,
+        initialRoute = null,
+        super(key: key);
 
   Route<dynamic> generator(RouteSettings settings) {
-    final match = Get.routeTree.matchRoute(settings.name);
-    Get.parameters = match?.parameters;
-
-    if (match?.route == null) {
-      return GetPageRoute(
-        page: unknownRoute.page,
-        parameter: unknownRoute.parameter,
-        settings:
-            RouteSettings(name: settings.name, arguments: settings.arguments),
-        curve: unknownRoute.curve,
-        opaque: unknownRoute.opaque,
-        customTransition: unknownRoute.customTransition,
-        binding: unknownRoute.binding,
-        bindings: unknownRoute.bindings,
-        transitionDuration:
-            (unknownRoute.transitionDuration ?? Get.defaultTransitionDuration),
-        transition: unknownRoute.transition,
-        popGesture: unknownRoute.popGesture,
-        fullscreenDialog: unknownRoute.fullscreenDialog,
-      );
-    }
-
-    return GetPageRoute(
-      page: match.route.page,
-      parameter: match.route.parameter,
-      settings:
-          RouteSettings(name: settings.name, arguments: settings.arguments),
-      curve: match.route.curve,
-      opaque: match.route.opaque,
-      customTransition: match.route.customTransition,
-      binding: match.route.binding,
-      bindings: match.route.bindings,
-      transitionDuration:
-          (match.route.transitionDuration ?? Get.defaultTransitionDuration),
-      transition: match.route.transition,
-      popGesture: match.route.popGesture,
-      fullscreenDialog: match.route.fullscreenDialog,
-    );
+    return PageRedirect(settings, unknownRoute).page();
   }
 
   List<Route<dynamic>> initialRoutesGenerate(String name) {
@@ -171,6 +204,7 @@ class GetMaterialApp extends StatelessWidget {
           settings: RouteSettings(name: name, arguments: null),
           curve: unknownRoute.curve,
           opaque: unknownRoute.opaque,
+          routeName: unknownRoute.name,
           customTransition: unknownRoute.customTransition,
           binding: unknownRoute.binding,
           bindings: unknownRoute.bindings,
@@ -190,6 +224,7 @@ class GetMaterialApp extends StatelessWidget {
         settings: RouteSettings(name: name, arguments: null),
         curve: match.route.curve,
         opaque: match.route.opaque,
+        routeName: match.route.name,
         binding: match.route.binding,
         bindings: match.route.bindings,
         transitionDuration:
@@ -209,6 +244,9 @@ class GetMaterialApp extends StatelessWidget {
           onDispose?.call();
         },
         initState: (i) {
+          Get.engine.addPostFrameCallback((timeStamp) {
+            onReady?.call();
+          });
           if (locale != null) Get.locale = locale;
 
           if (fallbackLocale != null) Get.fallbackLocale = fallbackLocale;
@@ -237,8 +275,9 @@ class GetMaterialApp extends StatelessWidget {
           );
         },
         builder: (_) {
-          return MaterialApp(
+          return CupertinoApp(
             key: _.unikey,
+            theme: theme,
             navigatorKey:
                 (navigatorKey == null ? Get.key : Get.addKey(navigatorKey)),
             home: home,
@@ -265,16 +304,13 @@ class GetMaterialApp extends StatelessWidget {
             title: title ?? '',
             onGenerateTitle: onGenerateTitle,
             color: color,
-            theme: _.theme ?? theme ?? ThemeData.fallback(),
-            darkTheme: darkTheme,
-            themeMode: _.themeMode ?? themeMode ?? ThemeMode.system,
+
             locale: Get.locale ?? locale,
             localizationsDelegates: localizationsDelegates,
             localeListResolutionCallback: localeListResolutionCallback,
             localeResolutionCallback: localeResolutionCallback,
             supportedLocales:
                 supportedLocales ?? const <Locale>[Locale('en', 'US')],
-            debugShowMaterialGrid: debugShowMaterialGrid ?? false,
             showPerformanceOverlay: showPerformanceOverlay ?? false,
             checkerboardRasterCacheImages:
                 checkerboardRasterCacheImages ?? false,
@@ -286,16 +322,4 @@ class GetMaterialApp extends StatelessWidget {
           );
         });
   }
-}
-
-const List<String> rtlLanguages = <String>[
-  'ar', // Arabic
-  'fa', // Farsi
-  'he', // Hebrew
-  'ps', // Pashto
-  'ur',
-];
-
-abstract class Translations {
-  Map<String, Map<String, String>> get keys;
 }

@@ -4,7 +4,7 @@ import 'package:flutter/widgets.dart';
 
 import '../../../get_core/get_core.dart';
 import '../../../get_instance/src/get_instance.dart';
-import '../../../get_rx/get_rx.dart';
+import '../../../get_rx/src/rx_types/rx_types.dart';
 import '../../get_state_manager.dart';
 
 typedef GetXControllerBuilder<T extends DisposableInterface> = Widget Function(
@@ -38,10 +38,14 @@ class GetX<T extends DisposableInterface> extends StatefulWidget {
     // this.streamController
   });
 
-  GetImplXState<T> createState() => GetImplXState<T>();
+  @override
+  GetXState<T> createState() => GetXState<T>();
 }
 
-class GetImplXState<T extends DisposableInterface> extends State<GetX<T>> {
+class GetXState<T extends DisposableInterface> extends State<GetX<T>> {
+  GetXState() {
+    _observer = RxNotifier();
+  }
   RxInterface _observer;
   T controller;
   bool isCreator = false;
@@ -49,7 +53,6 @@ class GetImplXState<T extends DisposableInterface> extends State<GetX<T>> {
 
   @override
   void initState() {
-    _observer = Rx();
     var isPrepared = GetInstance().isPrepared<T>(tag: widget.tag);
     var isRegistered = GetInstance().isRegistered<T>(tag: widget.tag);
 
@@ -76,7 +79,7 @@ class GetImplXState<T extends DisposableInterface> extends State<GetX<T>> {
     if (widget.global && Get.smartManagement == SmartManagement.onlyBuilder) {
       controller?.onStart();
     }
-    subs = _observer.subject.stream.listen((data) => setState(() {}));
+    subs = _observer.listen((data) => setState(() {}));
     super.initState();
   }
 
@@ -110,8 +113,8 @@ class GetImplXState<T extends DisposableInterface> extends State<GetX<T>> {
   }
 
   Widget get notifyChildren {
-    final observer = getObs;
-    getObs = _observer;
+    final observer = RxInterface.proxy;
+    RxInterface.proxy = _observer;
     final result = widget.builder(controller);
     if (!_observer.canUpdate) {
       throw """
@@ -123,7 +126,7 @@ class GetImplXState<T extends DisposableInterface> extends State<GetX<T>> {
       If you need to update a parent widget and a child widget, wrap each one in an Obx/GetX.
       """;
     }
-    getObs = observer;
+    RxInterface.proxy = observer;
     return result;
   }
 

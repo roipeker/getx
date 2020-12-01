@@ -1,3 +1,302 @@
+<<<<<<< HEAD
+=======
+## [3.21.2] 
+- Fix GetConnect.request returning a PUT request
+
+## [3.21.1] 
+- Allow null body to POST method on GetConnect
+
+## [3.21.0] - Big update
+- This update attaches two nice features developed by (@SchabanBo): *GetPage Children* And *GetMiddleware*
+In previous versions, to create child pages, you should do something like:
+
+```dart
+GetPage(
+  name: '/home',
+  page: () => HomeView(),
+  binding: HomeBinding(),
+),
+GetPage(
+  name: '/home/products',
+  page: () => ProductsView(),
+  binding: ProductsBinding(),
+),
+GetPage(
+  name: '/home/products/electronics',
+  page: () => ElectronicsView(),
+  binding: ElectronicsBinding(),
+),
+```
+Although the feature works well, it could be improved in several ways:
+1- If you had many pages, the page file could become huge and difficult to read. Besides, it was difficult to know which page was the daughter of which module.
+2- It was not possible to delegate the function of naming routes to a subroutine file.
+With this update, it is possible to create a declarative structure, very similar to the Flutter widget tree for your route, which might look like this:
+```dart
+GetPage(
+      name: '/home',
+      page: () => HomeView(),
+      binding: HomeBinding(),
+      children: [
+        GetPage(
+            name: '/products',
+            page: () => ProductsView(),
+            binding: ProductsBinding(),
+            children: [
+              GetPage(
+                 name: '/electronics',
+                 page: () => ElectronicsView(),
+                 binding: ElectronicsBinding(),
+              ),
+            ],
+          ),
+      ], 
+  );
+```
+Thus, when accessing the url: '/home/products/electronics'
+Or use Get.toNamed('/home/products/electronics') it will go directly to the page [ElectronicsView], because the child pages, automatically inherit the name of the ancestral page, so _with any small change on any father in the tree all children will be updated._ If you change [/products] to [/accessories], you don't nesse update on all child links. 
+
+However, the most powerful feature of this version is *GetMiddlewares*.
+The GetPage has now new property that takes a list of GetMiddleWare than can perform actions and run them in the specific order.
+
+### Priority
+
+The Order of the Middlewares to run can pe set by the priority in the GetMiddleware.
+
+```dart
+final middlewares = [
+  GetMiddleware(priority: 2),
+  GetMiddleware(priority: 5),
+  GetMiddleware(priority: 4),
+  GetMiddleware(priority: -8),
+];
+```
+those middlewares will be run in this order **-8 => 2 => 4 => 5**
+
+### Redirect
+
+This function will be called when the page of the called route is being searched for. It takes RouteSettings as a result to redirect to. Or give it null and there will be no redirecting.
+
+```dart
+GetPage redirect( ) {
+  final authService = Get.find<AuthService>();
+  return authService.authed.value ? null : RouteSettings(name: '/login')
+}
+```
+
+### onPageCalled
+
+This function will be called when this Page is called before anything created
+you can use it to change something about the page or give it new page
+
+```dart
+GetPage onPageCalled(GetPage page) {
+  final authService = Get.find<AuthService>();
+  return page.copyWith(title: 'Welcome ${authService.UserName}');
+}
+```
+
+### OnBindingsStart
+
+This function will be called right before the Bindings are initialize.
+Here you can change Bindings for this page.
+
+```dart
+List<Bindings> onBindingsStart(List<Bindings> bindings) {
+  final authService = Get.find<AuthService>();
+  if (authService.isAdmin) {
+    bindings.add(AdminBinding());
+  }
+  return bindings;
+}
+```
+
+### OnPageBuildStart
+
+This function will be called right after the Bindings are initialize.
+Here you can do something after that you created the bindings and before creating the page widget.
+
+```dart
+GetPageBuilder onPageBuildStart(GetPageBuilder page) {
+  print('bindings are ready');
+  return page;
+}
+```
+
+### OnPageBuilt
+
+This function will be called right after the GetPage.page function is called and will give you the result of the function. and take the widget that will be showed.
+
+### OnPageDispose
+
+This function will be called right after disposing all the related objects (Controllers, views, ...) of the page.
+
+## [3.20.1] 
+* Fix wrong reference with unnamed routes and added more tests
+
+## [3.20.0] - Big update
+* Added GetConnect. 
+- GetConnect is an easy way to communicate from your back to your front. With it you can:
+- Communicate through websockets
+- Send messages and events via websockets.
+- Listen to messages and events via websockets.
+- Make http requests (GET, PUT, POST, DELETE).
+- Add request modifiers (like attaching a token to each request made).
+- Add answer modifiers (how to change a value field whenever the answer arrives)
+- Add an authenticator, if the answer is 401, you can configure the renewal of your JWT, for example, and then it will again make the http request.
+- Set the number of attempts for the authenticator
+- Define a baseUrl for all requests
+- Define a standard encoder for your Model.
+- Note1: You will never need to use jsonEncoder. It will always be called automatically with each request. If you define an encoder for your model, it will return the instance of your model class ALREADY FILLED with server data.
+- Note2: all requests are safety, you do not need to insert try / catch in requests. It will always return a response. In case of an error code, Response.hasError will return true. The error code will always be returned, unless the error was a connection error, which will be returned Response.hasError, but with error code null.
+- These are relatively new features, and also inserted in separate containers. You don't have to use it if you don't want to. As it is relatively new, some functions, such as specific http methods, may be missing.
+* Translation to Korean (@rws08)
+* Fix Overlays state (@eduardoflorence)
+* Update chinese docs (@jonahzheng)
+* Added context.isDarkMode to context extensions
+  
+
+## [3.17.1]
+- Allow list.assignAll, map.assignAll and set.assignAll operate with null values
+
+## [3.17.0]
+- Added GetCupertinoApp
+- Added initial suport to navigator 2.0 
+
+## [3.16.2]
+- Clean RxList, RxMap and RxSet implementation
+- Now when declaring an `RxList()`, it will be started empty. If you want to start a null RxList, you must use `RxList(null)`.
+Improved GetStream to receive the same parameters as the StreamController, such as  `onListen`, `onPause`, `onResume` and `onCancel`.
+- Improve docs
+
+## [3.16.1]
+- Fix compilation error on master
+  
+## [3.16.0]
+- Documentation translated into Russian language. (@Renat Fakhrutdinov, @Doaxan and @BatttA)
+- Added error message callback for StateMixin (@eduardoflorence)
+- Fix incorrect Get.reference when pop route (@4mb1t) 
+- Added Uppercase/Capital letter on GetUtils (@AleFachini)
+- Redraw the Streams api to use GetStream instead of StreamControllers. Why this change? 
+Dart provides a Streams API that is really rich. However, asynchronous streams add extra latency to ensure that events are delivered in the exact order.
+It is not yet known whether this latency has any performance impact in mobile applications, and probably not, however, as GetX is also a server-side framework, we need to have the lowest latency at all, since our base is shared.
+Dart also has a Synchronous Streams api that has very low latency, however, it is not suitable for use in state management for two reasons:
+1- Synchronous Streams can only have one listen (see the issue opened by Hixie on dart lang for reference: https://github.com/dart-lang/sdk/issues/22240).
+This means that we cannot use this api for more than one listener, which is the basis of global state management, where we aim to change the state of more than one location. You can test this with this simple snippet:
+
+```dart
+void main() {
+  var controller = StreamController(sync: true);
+  var stream = controller.stream;
+  stream.listen((data) {
+    print('$data');
+    if (data == 'test4') controller.add('test5');
+  });
+
+  print('test1');
+  controller.add('test2');
+  stream.listen((event) {}); // second listen throws a exception
+  print('test3');
+  controller.add('test4');
+  print('test6');
+  controller.add('test7');
+  print("test8");
+}
+```
+2- Even with a single listener, the dart's Synchronous Streams api cannot deliver events in the exact order. We plan to work on a PR in the future at dart-lang to address this. So if we remove the line above that causes the exception, we will have the following output in the log:
+
+```dart
+void main() {
+  var controller = StreamController(sync: true);
+  var stream = controller.stream;
+  stream.listen((data) {
+    print('$data');
+    if (data == 'test4') controller.add('test5');
+  });
+
+  print('test1');
+  controller.add('test2');
+  // stream.listen((event) {}); // second listen throws a exception
+  print('test3');
+  controller.add('test4');
+  print('test6');
+  controller.add('test7');
+  print("test8");
+}
+///////////////////// log:
+test1
+test2
+test3
+test4
+test6
+test8
+test5
+
+```
+As we can see, test 4 skips to test 6, which skips to test 8, which skips to test 5. Note that test 7 didn't even appear in the log.
+
+However, if we work with GetStream, everything works as expected:
+```dart
+void main() {
+  var controller = GetStream();
+  var stream = controller.stream;
+  stream.listen((data) {
+    print('$data');
+    if (data == 'test4') controller.add('test5');
+  });
+
+  print('test1');
+  controller.add('test2');
+  // stream.listen((event) {}); // second listen throws a exception
+  print('test3');
+  controller.add('test4');
+  print('test6');
+  controller.add('test7');
+  print("test8");
+}
+///////////////////// log:
+test1
+test2
+test3
+test4
+test5
+test6
+test7
+test8
+
+```
+
+The dart documentation is clear that this api should be used with caution, and in view of these tests, we were sure that it is not stable enough to be used as the core of our state management, nor of the websockets notifications and get_server requests.
+
+Clarification about the controversy over benchmarks:
+In a version prior to changeLog, we talked about the 9000% difference in performance between Streams, and GetStreams that ended up causing a lot of controversy in the community.
+Initially, we would like to clarify that this does not mean that you will have mobile applications 9000% faster. Only that one of our main resources, showed itself with a high rate of requests, 9000% faster than using traditional streams. In a real world scenario, you will hardly have so many simultaneous requests.
+Skia renders frames on new devices at up to 120fps. This means that if you have a 10 second animation, you will have 1200 reconstructions. Unless you are working with animations, or something that requires rendering at the skia boundary, you won't need that much power. So this does not mean that we are revolutionizing the mobile world, only that we have created an alternative to Stream Sincronas, which works as expected, and which has satisfactory performance for low latency resources. The benchmarks are real, but that does not mean that you will have mobile applications 9000% faster, but that you have a new feature that performs at this level to use.
+For reference only, the benchmark can be found ([HERE](https://github.com/jonataslaw/getx/blob/master/test/benchmarks/benckmark_test.dart))
+
+In short: asynchronous streams from dart work perfectly, but add a latency that we want to remove on Get_server.
+Synchronous dart streams have unexpected behaviors, cannot have more than 1 listener and do not deliver events in the correct order, which completely prevents their use in mobile state managements, since you run the risk of displaying data on the wrong screen, since the last event will not always be the last event entered by the sink.
+The 9000% figures are real, however, they refer to the gross performance between Streams and GetStreams. This does not mean that this number will impact your applications, because you are unlikely to use all of that power.
+
+
+## [3.15.0]	- Big update
+- **Improve Performance**: We made modifications to make GetBuilder even faster. We have improved the structure behind it so that listeners are notified faster. Perhaps in version 4.0 everything will be based on this new structure, but maintaining the power and compatibility with streams. If you want to know how much Getx is faster than pure streams or ChangeNotifier (even after the last update using LinkedList), you can create run the repository tests at: (https://github.com/jonataslaw/getx/blob/master/test/benchmarks/benckmark_test.dart)
+- **Added StateMixin**
+StateMixin allows you to change the state of the controller, and display a loading, an error message, or a widget you want with 0 boilerplate. This makes things like API/Rest communication or websocket absurdly simple, and it's a real revolution in how state management has behaved so far.
+You no longer need to have a ternary in your code, and you don't need a widget like FutureBuilder, StreamBuilder or even Obx/GetBuilder to encompass your Visibility. This will change with the way you manage the state of your controllers, decrease your boilerplate absurdly, and give you more security in your code.
+- **Added GetNotifier**
+GetNotifier is a super and powerful ValueNotifier, which in addition to having the life cycle of the controllers, is extremely fast, and can manage a single state, as a simplified immutable state management solution.
+In theory, the only difference between it and GetxController is the possibility of setting an initial value in the constructor's super (exactly as ValueNotifier does). If the initial value is null, use GetxController. If you need a starting value, GetNotifier can be more useful and have less boilerplate, but both serve the same purpose: to decouple your visualization layer from your presentation logic.
+- Other Fixes and improvements:
+  - Fixed GetxController is closed twice when smartManagement.full is turn on
+  - Fixed phone number validation
+  - Fixed some inconsistencies in GetWidget and the life cycle of controllers
+  - It made controller testing completely safe with navigation.
+  - Improve docs (@eduardoflorence)
+  - Improve security types on routes (@unacorbatanegra)
+  - Improve code structure with less duplicate code: (@kranfix)
+  - Fix named route erroring when route does not exist (@FiercestT)
+
+>>>>>>> master
 ## [3.13.2]	
 - Reunification of the package.
 During the 2 week period, we try to keep this package as a compilation of smaller packages. We were successful in separating, getx is well decoupled and it was only necessary to send the internal folders as packages to pub.dev, however, it became very complicated to contribute to the package. This is because it was necessary to clone the repository, replace all pubspec packages with local paths, and after modification, return the original paths to do the PR. With that, the frequency of updates, which was about 4 to 5 days, became almost 2 weeks, and this is not legal for a community as active as Getx, which uses this package precisely in addition to being modern and performance, be constantly improving. This led contributors to the conclusion that getx works best together.

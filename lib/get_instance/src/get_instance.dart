@@ -11,9 +11,7 @@ class GetInstance {
 
   static GetInstance _getInstance;
 
-  T call<T>() {
-    return find<T>();
-  }
+  T call<T>() => find<T>();
 
   /// Holds references to every registered Instance when using
   /// [Get.put()]
@@ -223,7 +221,7 @@ class GetInstance {
   S _startController<S>({String tag}) {
     final key = _getKey(S, tag);
     final i = _singl[key].getDependency() as S;
-    if (i is GetLifeCycle) {
+    if (i is GetLifeCycleBase) {
       if (i.onStart != null) {
         i.onStart();
         Get.log('"$key" has been initialized');

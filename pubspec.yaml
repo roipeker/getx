@@ -1,6 +1,10 @@
 name: get
 description: Open screens/snackbars/dialogs/bottomSheets without context, manage states and inject dependencies easily with GetX.
+<<<<<<< HEAD
 version: 3.13.2
+=======
+version: 3.21.2
+>>>>>>> master
 homepage: https://github.com/jonataslaw/getx
 
 environment:

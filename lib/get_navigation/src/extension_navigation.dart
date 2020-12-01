@@ -1,4 +1,4 @@
-import 'dart:ui';
+import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
@@ -10,9 +10,6 @@ import 'dialog/dialog_route.dart';
 import 'root/parse_route.dart';
 import 'root/root_controller.dart';
 import 'routes/transitions_type.dart';
-
-//TODO: Split this class on "Snackbar" "Dialog" "bottomSheet"
-//and "navigation" extensions
 
 extension ExtensionSnackbar on GetInterface {
   void rawSnackbar({
@@ -232,7 +229,8 @@ extension ExtensionDialog on GetInterface {
     assert(useRootNavigator != null);
     assert(debugCheckHasMaterialLocalizations(context));
 
-    final theme = Theme.of(context, shadowThemeOnly: true);
+    //  final theme = Theme.of(context, shadowThemeOnly: true);
+    final theme = Theme.of(context);
     return generalDialog<T>(
       pageBuilder: (buildContext, animation, secondaryAnimation) {
         final pageChild = widget;
@@ -428,7 +426,8 @@ extension ExtensionBottomSheet on GetInterface {
         .push(GetModalBottomSheetRoute<T>(
       builder: (_) => bottomsheet,
       isPersistent: persistent,
-      theme: Theme.of(key.currentContext, shadowThemeOnly: true),
+      // theme: Theme.of(key.currentContext, shadowThemeOnly: true),
+      theme: Theme.of(key.currentContext),
       isScrollControlled: isScrollControlled,
       barrierLabel:
           MaterialLocalizations.of(key.currentContext).modalBarrierDismissLabel,
@@ -1044,28 +1043,34 @@ Since version 2.8 it is possible to access the properties
     return WidgetsBinding.instance;
   }
 
-  ///The window to which this binding is bound.
-  Window get window => engine.window;
+  //TODO: Change to ui.SingletonFlutterWindow rather dynamic
+  //when Flutter update stable. dynamic is used to avoid Breaking Changes
+  /// The window to which this binding is bound.
+  dynamic get window => ui.window;
+
+  Locale get deviceLocale => ui.window.locale;
 
   ///The number of device pixels for each logical pixel.
-  double get pixelRatio => window.devicePixelRatio;
+  double get pixelRatio => ui.window.devicePixelRatio;
+
+  Size get size => ui.window.physicalSize / pixelRatio;
 
   ///The horizontal extent of this size.
-  double get width => window.physicalSize.width / pixelRatio;
+  double get width => size.width;
 
   ///The vertical extent of this size
-  double get height => window.physicalSize.height / pixelRatio;
+  double get height => size.height;
 
   ///The distance from the top edge to the first unpadded pixel,
   ///in physical pixels.
-  double get statusBarHeight => window.padding.top;
+  double get statusBarHeight => ui.window.padding.top;
 
   ///The distance from the bottom edge to the first unpadded pixel,
   ///in physical pixels.
-  double get bottomBarHeight => window.padding.bottom;
+  double get bottomBarHeight => ui.window.padding.bottom;
 
   ///The system-reported text scale.
-  double get textScaleFactor => window.textScaleFactor;
+  double get textScaleFactor => ui.window.textScaleFactor;
 
   /// give access to TextTheme.of(context)
   TextTheme get textTheme => theme?.textTheme;
@@ -1077,7 +1082,8 @@ Since version 2.8 it is possible to access the properties
   bool get isDarkMode => (theme.brightness == Brightness.dark);
 
   /// Check if dark mode theme is enable on platform on android Q+
-  bool get isPlatformDarkMode => (window.platformBrightness == Brightness.dark);
+  bool get isPlatformDarkMode =>
+      (ui.window.platformBrightness == Brightness.dark);
 
   /// give access to Theme.of(context).iconTheme.color
   Color get iconColor => theme?.iconTheme?.color;
